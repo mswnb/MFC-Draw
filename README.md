@@ -20,13 +20,13 @@
 
 该绘图程序开发及运行环境为 **Microsoft Visual Studio 2022**。打开Visual Studio，选择创建新项目，选择创建 **MFC应用**。将项目命名为自己学号，选择MFC的应用程序类型为 **单文档**，项目样式选择为 **MFC standard**，点击完成，即可等待系统自动建立新项目。
 
-![](.\picture\1.jpg)
+![](./picture/1.jpg)
 
-![](.\picture\2.jpg)
+![](./picture/2.jpg)
 
 项目创建完成后，其中已自动包含了一些文件。其类结构大致如下:
 
-![](.\picture\0.jpg)
+![](./picture/0.jpg)
 
 这里只需关心其中两个类。第一， `CSettingDlg`用来编辑类的消息响应函数，例如当我们创建一个新的对话框时，就需要用到该类的相关函数。第二， `C20204804View`代表了程序运行的可视化窗口，它包含工具栏和菜单栏的命令响应函数以及鼠标的消息响应函数。实现绘图过程中各个功能的代码都将在这个类中进行编写。
 根据上面列出的基本功能，应事先在 `C20204804View`类（后缀为h的文件）中添加如下成员：
@@ -85,31 +85,31 @@ CPoint Text_Pos = CPoint(0, 0);//文本框位置
 
 实现调整画笔粗细功能的思路如下：点击菜单中的画笔设置-粗细，弹出一个对话框，用户输入粗细的数值，点击确认即可更改画笔粗细。因此我们需要一个能够处理用户输入的对话框程序。在资源视图中的 **Dialog** 文件夹添加一个类型为 `Dialog`（对话框）的资源；在该工程的**资源视图**下找到 **Dialog** 文件夹右键选择**添加资源**，如下所示：
 
-![](.\picture\4.jpg)
+![](./picture/4.jpg)
 
 弹出**添加资源**窗口后，选择**Dialog**后新建一个对话框，如下所示：
 
-![](.\picture\5.jpg)
+![](./picture/5.jpg)
 
 添加资源后，在左侧工具箱中，将一个 `Edit Control`（输入文本）和 `Static Text`（文字说明）控件添加进对话框，更改 `Static Text`的内容，设置粗细的对话框便设置完毕。
 
-![](.\picture\6.jpg)
+![](./picture/6.jpg)
 
 为了调用这个对话框，需要为该对话框添加一个类，右键刚刚新建的**Dialog**对话框选择**添加类**
 
-![](.\picture\7.jpg)
+![](./picture/7.jpg)
 
 然后给该类设置**类名**后，点击**确定**按钮：
 
-<img src=".\picture\8.jpg" style="zoom:67%;" />
+<img src="./picture/8.jpg" style="zoom:67%;" />
 
 接下来要为输入文本框添加以下变量，还是右键刚刚新建的**Dialog**对话框选择**添加变量**：
 
-![](.\picture\9.jpg)
+![](./picture/9.jpg)
 
 为输入文本框控件设置名称，下拉选择**控件ID**为**IDC_EDIT1**的控件，并设置**名称**后点击**完成**
 
-<img src=".\picture\10.jpg" style="zoom:67%;" />
+<img src="./picture/10.jpg" style="zoom:67%;" />
 
 ##### 设置画笔粗细代码实现
 
@@ -119,7 +119,7 @@ CPoint Text_Pos = CPoint(0, 0);//文本框位置
 int Pen_Size = 1;//初始画笔粗细为1
 ```
 
-![](.\picture\11.jpg)
+![](./picture/11.jpg)
 
 然后在 `CSetPenSizeDialog`类源文件中的 `CSetPenSizeDialog::DoDataExchange`函数中添加如下代码，即可将输入的数值转变为画笔粗细：
 
@@ -129,17 +129,19 @@ Edit.GetWindowTextW(str);//获取用户输入的画笔粗细
 Pen_Size = _ttoi(str);//将用户输入的画笔粗细度进行设置
 ```
 
-![](.\picture\12.jpg)
+![](./picture/12.jpg)
 
 接下来为菜单栏的 **粗细** 添加事件处理程序，我们应该回到**资源视图**下，找到我们之前的**Menu**选项中的**IDR_MAINFRAME**并双击打开，在**画笔工具**中的**粗细**选项栏中右击给它**添加处理点击事件**
 
-![](.\picture\13.jpg)
+![](./picture/13.jpg)
 
 接下来为该**粗细**点击事件**添加函数绑定**，设置**函数名**（尽量不要和我雷同！），**切记类列表**下拉选择自己的`CMy20204804View`类，填写好后点击确定即可，等待VS_Studio自动为我们创建好函数
 
-<img src=".\picture\14.jpg" style="zoom:67%;" />
+<img src="./picture/14.jpg" style="zoom:67%;" />
 
 最后给`OnSetPenSize`函数添加以下代码，即可在点击该选项后调用上面的对话框：
+
+![](./picture/15.jpg)
 
 ```c++
 //颜色选择功能点击事件
@@ -159,19 +161,21 @@ void CMy20204804View::OnSetPenSize()
 >
 > 在上方的代码中遇到`CSetPenSizeDialog`引用报错是由于在`CMy20204804View`类源文件中没有导入`CSetPenSizeDialog`所需要的依赖，我们可在`CMy20204804View`类源文件最上方添加`CSetPenSizeDialog`所需要的依赖即可
 >
-> ![](.\picture\16.jpg)
+> ![](./picture/16.jpg)
 
 #### 颜色设置功能实现
 
 更改画笔颜色功能，只需调用项目自带的 `CColorDialog`类的对话框。为 **颜色** 选项**添加事件处理程序**，我们还是回到**资源视图**的**Menu**文件夹的**IDR_MAINFRAME**项并双击打开它，在**画笔工具**中**颜色**选项栏中右击给它**添加处理点击事件**。
 
-<img src=".\picture\17.jpg" style="zoom:67%;" />
+<img src="./picture/17.jpg" style="zoom:67%;" />
 
 接下来的步骤也和之前给**粗细**功能的点击事件**添加函数绑定**苟同，设置**函数名**（还是尽量不要和我雷同！），还是**切记类列表**下拉选择自己的`CMy20204804View`类，填写好后点击确定即可，接着又等待VS_Studio自动为我们创建好函数
 
-<img src=".\picture\18.jpg" style="zoom:67%;" />
+<img src="./picture/18.jpg" style="zoom:67%;" />
 
 最后给`OnSetPenSize`函数添加如下代码，即可调用该对话框：
+
+![](./picture/19.jpg)
 
 ```c++
 //颜色选择功能点击事件
@@ -194,7 +198,7 @@ void CMy20204804View::OnSetColor()
 >
 > 以上就是对**画笔工具**栏中的**粗细**和**颜色**调整功能的所有实现了，不妨运行一下自己的程序，看看都是否出现了以下图片所示的功能展示了，如果出现了则恭喜你，完成了以上的功能实现了，如果没有出现图中的东西或者在程序运行过程中碰到报错，那么你一定漏看或者忽略我之前的步骤，那么就请你回顾之前的操作步骤。这里需要提醒一下VS_Studio编辑工具中每当你修改某个类文件时，label栏就出现带有*号文件则表示你该文件有过修改并未保存，出现这个的时候需要你手动Ctrl+s保存代码的！
 >
-> <img src=".\picture\20.jpg" style="zoom:50%;" /><img src=".\picture\21.jpg" style="zoom:50%;" />
+> <img src="./picture/20.jpg" style="zoom:50%;" /><img src="./picture/21.jpg" style="zoom:50%;" />
 >
 > 
 
@@ -230,11 +234,11 @@ void CMy20204804View::OnDrawLine()
 
  为实现在工作区绘画，需要添加鼠标消息函数。在类向导中添加相应的鼠标消息处理程序如下：
 
-![](.\picture\22.jpg)
+![](./picture/22.jpg)
 
 `OnMouseMove`为鼠标移动时会执行的操作， `OnLButtonDown`为鼠标左键按下时会执行的操作， `OnLButtonUp`为鼠标左键抬起时会执行的操作， `OnRButtonDown`、 `OnRButtonUp`则为右键按下和抬起时会执行的操作。以上是绘画前的准备工作。
 
-![](.\picture\23.jpg)
+![](./picture/23.jpg)
 
 
 当我们按下鼠标左键时，将 `BeginPoint`和 `EndPoint`初始化为当前鼠标位置。根据习惯，当我们按住左键在工作区中拖动时，就会在工作区中显示相应的图形，所以我们需要在`OnLButtonDown`函数中添加以下代码为鼠标左键按下时会执行的操作：
@@ -279,7 +283,7 @@ if (nFlags & MK_LBUTTON) {
 定义的画笔为实线，粗细和颜色为当前设定的。这里之所以需要 `oldPen`，是为了防止内存泄露。然后判断当前的模式 `m_Shape`，这里使用 `switch`语句（因为后面还有很多其他图形），当 `m_Shape`为 `Shape:: Line`时开始画直线。然后使用dc自带的 `MoveTo`和 `LineTo`函数，它代表从 `MoveTo`的点到 `LineTo`的点画一条直线。
 但是仅仅将这两个函数调用一遍还不够，因为只要我们移动鼠标，程序就会不断执行这个函数，从而会看到屏幕随着鼠标的移动显示出“无数”直线，这与实际不符。为了实现实际画图中的“橡皮筋”效果，我们必须设置画笔模式为 `R2_NOTXORPEN`，它的意思是将画笔颜色与屏幕像素值取异或再取反。即，在鼠标移动时，先将上次画出的直线擦除，再画出新的直线，这样就达到了直线随着我们的鼠标移动的效果。
 
-![](.\picture\24.jpg)
+![](./picture/24.jpg)
 
 前3条语句将上一步画出的线擦除，后2条语句画出新的直线。`point`为我们当前鼠标位置。每次绘画完毕，用 `EndPoint`储存当前鼠标的位置，以便下次擦除上次的绘画痕迹。
 实际测试时还会发现如下问题，当有多条直线相交时，相交部分会变为白色。这是我们画笔模式选择了 `R2_NOTXORPEN`的缘故。因此当我们抬起鼠标时，应当将这片白色的部分重新补回正常的颜色。所以我们还要在 `OnLButtonUp`中添加如下代码，重新绘画一遍相交部分(**之后在其它图形编写过程遇到调整都会在此事件中添加对应图形的case**)：
@@ -339,7 +343,7 @@ case Shape::Rectangle: {
 
 注意实际操作时会发现一个问题：新画的矩形会盖住先前的图案
 
-![](.\picture\25.jpg)
+![](./picture/25.jpg)
 
 所以为解决此问题，在上面代码中增加一行： `dc.SelectStockObject(PS_NULL)`，将图案设置为透明即可。
 同样地，最后要在 `OnLButtonUp`函数中重新绘画重合的部分：
@@ -399,7 +403,7 @@ case Shape::Square: {
 
 此处为了能向任意方向绘制正方形，增加了一个判断条件。抬起鼠标后，仍像之前那样重绘重合部分，这里不再赘述。
 
-![](.\picture\26.jpg)
+![](./picture/26.jpg)
 
 `OnLButtonUp`函数添加以下代码:
 
@@ -742,7 +746,7 @@ CMy20204804View::~CMy20204804View()
 
 在`C20204804View`类源文件中创以下函数，并完成代码的编写
 
-<img src=".\picture\28.jpg" style="zoom:50%;" />
+<img src="./picture/28.jpg" style="zoom:50%;" />
 
 ```c++
 void CMy20204804View::ClearRect(CRect rect)
@@ -758,7 +762,7 @@ void CMy20204804View::ClearRect(CRect rect)
 }
 ```
 
-<img src=".\picture\29.jpg" style="zoom:50%;" />
+<img src="./picture/29.jpg" style="zoom:50%;" />
 
 ```c++
 void CMy20204804View::FastRect(CRect rect, bool notxor)
@@ -822,9 +826,9 @@ case Shape::Text: {
 
 接下来我们便可在文本框中输入一些文字，只要按下回车，就能将这些文字显示在屏幕上。为了实现该功能，我们必须借助**类向导**添加一个虚函数 `PreTranslateMessage(MSG* pMsg)`，它负责响应我们的键盘消息。所以，我们将在该函数中添加代码，当我们按下回车键时即 `(pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_RETURN)`，如果我们正在使用 `Shape::Text`模式，就会用 `GetWindowTextW`函数提取出文本框中的文字，然后将文本框释放，再用 `TextOutW`仅将文字显示在屏幕上。
 
-![](.\picture\22.jpg)
+![](./picture/22.jpg)
 
-![](.\picture\27.jpg)
+![](./picture/27.jpg)
 
 注意当屏幕上存在文本框时如果我们切换到了其他绘画工具，根据习惯同样应该释放文本框，所以这时要进行和按下回车键一样的操作。具体在`PreTranslateMessage`函数中添加代码如下：
 
