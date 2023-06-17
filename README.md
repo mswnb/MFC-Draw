@@ -1,4 +1,6 @@
-> + 项目参考源码地址：[mswnb/MFC-Draw (github.com)](https://github.com/mswnb/MFC-Draw)
+> + github地址：[mswnb/MFC-Draw (github.com)](https://github.com/mswnb/MFC-Draw)
+> + github国内镜像地址：https://kgithub.com/mswnb/MFC-Draw
+> + gitee地址：可惜没有，嫌麻烦不想弄了😂
 
 # MFC-DRAW
 
@@ -877,3 +879,502 @@ if (m_Shape == Shape::Fill) {
 
 至此填充功能实现。
 
+#### 铅笔的编写实现
+
+为 **填充** 选项添加事件处理程序，当我们点击选项时，将 `C20204804View`类源文件中的 `m_Shape`成员更改为 `Shape::Shape::Pencil`。
+
+```c++
+//铅笔
+void CSimpleDrawView::OnSetPencil()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Shape = Shape::Pencil;
+}
+```
+
+铅笔只需要让窗口实时跟踪我们鼠标的轨迹然后用某种颜色画出来即可。这和画直线十分相似，用 `MoveTo`和 `LineTo`即可实现，与直线不同的是，我们的起始点始终为鼠标上一时刻的坐标，这样就可实时跟踪轨迹。`OnMouseMove`函数添加代码如下：
+
+```c++
+case Shape::Pencil: {
+    BeginPoint = EndPoint;//终点做新起点
+    EndPoint = point;
+    dc.MoveTo(BeginPoint);
+    dc.LineTo(EndPoint);
+    break;
+}
+```
+
+至此铅笔功能实现。
+
+#### 橡皮擦的编写实现
+
+为 **填充** 选项添加事件处理程序，当我们点击选项时，将 `C20204804View`类源文件中的 `m_Shape`成员更改为 `Shape::Shape::Eraser`。
+
+```c++
+//橡皮擦
+void CMy20204804View::OnSetEraser()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Shape = Shape::Eraser;
+}
+```
+
+橡皮的操作与铅笔完全相同，只不过画笔颜色不一样，使用橡皮时强制将画笔颜色设置为背景色，这样鼠标经过之处均变为背景色，相当于擦除了原本的图案。橡皮的粗细用画笔的粗细代表。代码如下：
+
+```c++
+case Shape::Eraser: {
+    COLORREF pColor = dc.GetBkColor();
+    CPen newPen(PS_SOLID, Pen_Size, pColor);
+    dc.SelectObject(&newPen);
+
+    BeginPoint = EndPoint;//终点做新起点
+    EndPoint = point;
+    dc.MoveTo(BeginPoint);
+    dc.LineTo(EndPoint);
+
+    break;
+}
+```
+
+至此橡皮擦功能实现。
+
+#### 选择功能的编写实现
+
+择功能的实现较为复杂。首先为 **选择区域** 选项添加事件处理程序，当我们点击选项时，将 `C20204804View`类源文件中的 `m_Shape`成员更改为 `Shape::Choose`。以下功能均在该模式下执行。
+
+```c++
+//选择
+void CMy20204804View::OnChoose()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Shape = Shape::Choose;
+}
+```
+
+##### 选择某一区域
+
+选择功能对于用户来说就是画出一个矩形框住一个范围，所以实现方法与画矩形相同。为避免与矩形混淆，我们用虚线画矩形，而且强制画笔粗细为最细，颜色为黑色。`OnMouseMove`函数添加代码如下：
+
+```c++
+case Shape::Choose: {
+    if (!Chosen) {
+        CRect rectP(BeginPoint, EndPoint);
+        FastRect(rectP, true);
+        CRect rectP2(BeginPoint, point);
+        FastRect(rectP2, true);
+        EndPoint = point;
+    }
+}
+```
+
+此处用到了快速描绘选框矩形的一个函数 `FastRect`，详见源代码。 当我们抬起鼠标左键的一刻即代表选择完毕，此时置一个 `bool`变量 `Chosen`（在 `C20204804View`类头文件中定义）为 `True`。这意味着我们已经选择了一个区域，可以进行接下来的几个操作。此时如果再次点击区域以外的位置，将会重新选择区域。`LButtonDown`函数添加代码如下：
+
+```c++
+if (Chosen) {
+    CRect area(Chooselt, Choosebr);
+    if (!area.PtInRect(point))
+    {
+        /*要进行的操作*/
+        Chosen = false;
+        ClearRect(area);
+
+    }
+}
+```
+
+至此选择框功能实现。
+
+##### 拖动某一区域
+
+为了实现拖动功能，选择完区域的同时，我们需要对当前画面做一些处理。由于接下来拖动该区域后，这片区域将变为空白，为实现这个效果，我们需要用到其他两个dc（须事先在`C20204804View`类头文件中定义）: `HDC bc_hdc`保存当前图像。然后将该选框内图像填为空白，再用 `HDC ac_hdc`保存此时图像。这样拖动选区时，先重绘 `ac_hdc`中的图像到工作区，再重绘 `bc_hdc`中选区的那一块图像到工作区，就实现了拖动功能。当然，这时还应记录下选区的坐标（左上角和右下角）以及初始化有关拖动的工作变量以便后续处理。`OnLButtonUp`函数添加代码如下：
+
+```c++
+case Shape::Choose: {
+    if (!Chosen) {
+        CRect rectP2(BeginPoint, point);
+        ClearRect(rectP2);
+        CRect rect;
+        GetClientRect(&rect);
+        HBITMAP hbitmap = CreateCompatibleBitmap(dc, rect.right - rect.left, rect.bottom - rect.top);//创建兼容位图
+        bc_hdc = CreateCompatibleDC(dc);      //创建兼容DC，以便将图像保存为不同的格式
+        SelectObject(bc_hdc, hbitmap);//将位图选入DC，并保存返回值 
+        BitBlt(bc_hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, dc, 0, 0, SRCCOPY);//将屏幕DC图像复制到内存DC
+
+        CBrush cBr(RGB(255, 255, 255));
+        dc.FillRect(rectP2, &cBr);
+
+        hbitmap = CreateCompatibleBitmap(dc, rect.right - rect.left, rect.bottom - rect.top);//创建兼容位图
+        ac_hdc = CreateCompatibleDC(dc);
+        SelectObject(ac_hdc, hbitmap);
+        BitBlt(ac_hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, dc, 0, 0, SRCCOPY);
+        StretchBlt(dc, BeginPoint.x, BeginPoint.y, rectP2.Width(), rectP2.Height(),
+            bc_hdc, BeginPoint.x, BeginPoint.y, rectP2.Width(), rectP2.Height(), SRCCOPY);
+        FastRect(rectP2, false);
+        EndPoint = point;
+        Chosen = true;
+        Chooselt = BeginPoint;
+        Choosebr = point;
+        Startlt = Chooselt;
+        Startbr = Choosebr;
+        Tempclt = Chooselt;
+        Tempcbr = Choosebr;
+    }
+    else {
+        Chooselt = Tempclt;
+        Choosebr = Tempcbr;
+        CRect rectP2(Chooselt, Choosebr);
+        FastRect(rectP2, false);
+    }
+
+    break;
+}
+```
+
+其中 `CPoint Chooselt, Choosebr, Tempclt, Tempcbr, Startlt, Startbr`需要事先定义在 `CSimpleDrawView`类中，它们记录选框的左上角坐标（lt）和右下角坐标（br）。
+上面是在我们首次选择某区域后抬起左键执行的操作。此后再次点击鼠标左键，如果落点在区域内，我们就可以按住鼠标拖动该区域（否则就是重新选区）。 `Chooselt`和 `Choosebr`为选框静止的位置， `Tempclt`和 `Tempcbr`为选框移动过程中实时的位置。松开鼠标左键时，更新选框静止位置。`OnMouseMove`函数修改代码如下：
+
+```c++
+case Shape::Choose: {
+    if (!Chosen) {
+        CRect rectP(BeginPoint, EndPoint);
+        FastRect(rectP,true);
+        CRect rectP2(BeginPoint, point);
+        FastRect(rectP2,true);
+        EndPoint = point;
+    }
+    else {
+        CRect area(Tempclt, Tempcbr);
+        ClearRect(area);
+        CRect rect;
+        GetClientRect(&rect);
+        StretchBlt(dc, 0, 0, rect.Width(), rect.Height(),
+            ac_hdc, 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+        int lenx = point.x - BeginPoint.x;
+        int leny = point.y - BeginPoint.y;
+        Tempclt = CPoint(Chooselt.x + lenx, Chooselt.y + leny);
+        Tempcbr = CPoint(Choosebr.x + lenx, Choosebr.y + leny);
+        CRect newarea(Tempclt, Tempcbr);
+        StretchBlt(dc, Tempclt.x, Tempclt.y, newarea.Width(), newarea.Height(),
+            bc_hdc, Startlt.x, Startlt.y, Startbr.x - Startlt.x, Startbr.y - Startlt.y, SRCCOPY);
+        FastRect(newarea,true);
+    }
+
+    break;
+}
+```
+
+至此拖动功能实现。
+
+##### 缩放某一区域
+
+缩放功能是拖动功能的特殊情况，我们可以改变选区的大小。在拖动功能中，选区的左上角和右下角会随着鼠标移动。而在缩放功能中，固定左上角不动，只有右下角移动，就实现了选区大小的更改。此外 `StretchBlt`函数也将自动将原选区的图像按比例画到新选区中，就实现了缩放功能。在操作上，本系统用按住鼠标右键移动的方式进行缩放。故还应对 `OnRButtonDown`和 `OnRButtonUp`函数添加一些必要代码:
+
+```c++
+void C20204804View::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (Chosen) {
+		BeginPoint = EndPoint = point;
+	}
+	CView::OnRButtonDown(nFlags, point);
+}
+```
+
+```c++
+void C20204804View::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CClientDC dc(this);
+	if (Chosen) {
+		Chooselt = Tempclt;
+		Choosebr = Tempcbr;
+		CRect rectP2(Chooselt, Choosebr);
+		FastRect(rectP2,false);
+	}
+		
+	CView::OnRButtonUp(nFlags, point);
+}
+```
+
+在`OnMouseMove`函数中添加如下代码：
+
+```c++
+if (nFlags & MK_RBUTTON) {
+	CClientDC dc(this);
+	if (m_Shape == Shape::Choose && Chosen) {
+		CRect area(Tempclt, Tempcbr);
+		ClearRect(area);
+		CRect rect;
+		GetClientRect(&rect);
+		StretchBlt(dc, 0, 0, rect.Width(), rect.Height(),
+			ac_hdc, 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+		int lenx = point.x - BeginPoint.x;
+		int leny = point.y - BeginPoint.y;
+		Tempcbr = CPoint(Choosebr.x + lenx, Choosebr.y + leny);
+		CRect newarea(Tempclt, Tempcbr);
+		StretchBlt(dc, Tempclt.x, Tempclt.y, newarea.Width(), newarea.Height(),
+		bc_hdc, Startlt.x, Startlt.y, Startbr.x - Startlt.x, Startbr.y - Startlt.y, SRCCOPY);
+		FastRect(newarea);
+	}
+}
+```
+
+至此缩放功能实现。
+
+##### 删除某一区域
+
+本系统采用按下退格键删除区域的方式。故该部分在 `PreTranslateMessage`中执行。只需将 `ac_hdc`中保存的图像重绘到工作区并取消选框即可，添加代码如下：
+
+```c++
+if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_BACK) {//按下退格
+    if (Chosen) {
+        CClientDC dc(this);
+        CRect rect;
+        GetClientRect(&rect);
+        StretchBlt(dc, 0, 0, rect.Width(), rect.Height(),
+                   ac_hdc, 0, 0, rect.Width(), rect.Height(), SRCCOPY);
+        Chosen = false;
+        return TRUE;
+    }
+}
+```
+
+至此删除某一区域功能实现。
+
+#### 撤销的编写实现
+
+现在首先我们需要创建CTempSave类，该类提供了撤回具体逻辑，步骤如下图：
+
+<img src="/picture/31.jpg" style="zoom:50%;" />
+
+为类命名，命名规范就不多说了,然后点击确定
+
+<img src="/picture/32.jpg" style="zoom:50%;" />
+
+`CTempSave`类创建好后，编辑器会自动帮我们建好头文件和源文件，给`CTempSave`类头文件添加如下代码：
+
+```c++
+#pragma once
+#include <list>
+#define MAX_SAVE 10
+using namespace std;
+int TempSave(CWnd* pWnd, list<HBITMAP>& SaveSeries, int savenum);
+int OpenTemp(CWnd* pWnd, list<HBITMAP>& SaveSeries);
+int Redraw(CWnd* pWnd, HBITMAP savemap, int x, int y);
+class CTempSave
+{
+};
+```
+
+接下来再给`CTempSave`类源文件添加如下代码：
+
+```c++
+#include "pch.h"
+#include "CTempSave.h"
+int TempSave(CWnd* pWnd, list<HBITMAP>& SaveSeries, int savenum) {
+	CClientDC dc(pWnd);
+	CRect rect;
+	GetClientRect(pWnd->GetSafeHwnd(), &rect);//获取画布大小
+	HBITMAP hbitmap = CreateCompatibleBitmap(dc, rect.right - rect.left, rect.bottom - rect.top);//创建兼容位图
+	HDC hdc = CreateCompatibleDC(dc);      //创建兼容DC，以便将图像保存为不同的格式
+	HBITMAP hOldMap = (HBITMAP)SelectObject(hdc, hbitmap);//将位图选入DC，并保存返回值 
+	BitBlt(hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, dc, 0, 0, SRCCOPY);//将屏幕DC图像复制到内存DC
+	if (savenum > MAX_SAVE) {
+		SaveSeries.pop_front();
+	}
+	SaveSeries.push_back(hbitmap);
+	SelectObject(hdc, hOldMap);
+	return 1;
+}
+int OpenTemp(CWnd* pWnd, list<HBITMAP>& SaveSeries) {
+	Redraw(pWnd, SaveSeries.back(), 0, 0);
+	SaveSeries.pop_back();
+	return 1;
+}
+int Redraw(CWnd* pWnd, HBITMAP savemap, int x, int y) {
+	CBitmap loadImageBitmap;
+	loadImageBitmap.Attach(savemap);
+	BITMAP bitmap;
+	loadImageBitmap.GetBitmap(&bitmap);
+
+	CBrush newBrush, *oldBrush;
+	CPen newPen, *oldPen;
+	newBrush.CreatePatternBrush(&loadImageBitmap);
+	newPen.CreatePen(PS_NULL, 1, RGB(0, 0, 0));
+	CClientDC dc(pWnd);
+	oldBrush = (CBrush*)dc.SelectObject(&newBrush);
+	oldPen = dc.SelectObject(&newPen);
+	dc.Rectangle(x, y, x + bitmap.bmWidth, y + bitmap.bmHeight);
+	dc.SelectObject(oldBrush);
+	dc.SelectObject(oldPen);
+	return 1;
+}
+```
+
+至此我们完成了撤销逻辑代码的编写，接下来就要为 **撤销** 选项**添加事件处理程序**
+
+![](/picture/30.jpg)
+
+由于我们需要在`C20204804View`类源文件使用CTempSave类提供的函数，所以要在`C20204804View`类源文件顶部中引入`CTempSave`类
+
+```c++
+#include "CTempSave.h"
+```
+
+下一步在`OnEditUndo`撤回函数中添加如下代码：
+
+```c++
+//撤回
+void CMy20204804View::OnEditUndo()
+{
+	// TODO: 在此添加命令处理程序代码
+	if (!SaveSeries.empty()) {
+		OpenTemp(this, SaveSeries);
+		savenum--;
+	}
+	else {
+		MessageBox((CString)"已经是第一步");
+	}
+}
+```
+
+在 `C20204804View`类头文件中定义了一个列表 `list<HBITMAP> SaveSeries`暂存所有的屏幕图像（**前些步骤由于某些原因注释掉了，需要解除注释**，并在`C20204804View`类头文件中的顶部引入命名空间）代码如下：
+
+```c++
+#include <list>
+#define MAX_SAVE 10
+using namespace std;
+```
+
+当按下撤销快捷键时就调用该处理程序，取 `SaveSeries`中最后一个图像绘制到工作区，并将其弹出即可。这里规定最大撤回步数为 *10*。在 `C20204804View.cpp`中包含其头文件即可调用其中函数。此外，增加了一个限制条件，**在"选择区域"模式下不会暂存图像** ，至此撤回功能实现。
+
+#### 保存与打开文件
+
+为保存文件，额外添加一个 `CSaveHelper`类，具体保存的方式与实现选择功能时的类似，添加类的步骤和之前创建`CTempSave`类步骤是一样的，这里不再赘述，为`CSaveHelper`类头文件添加如下代码:
+
+```c++
+#pragma once
+class CSaveHelper
+{
+public:
+	CSaveHelper();
+	~CSaveHelper();
+
+public:
+	int Save(CWnd* pWnd, CString filePath);
+};
+```
+
+为`CSaveHelper`类源文件添加如下代码:
+
+```c++
+#include "pch.h"
+#include "CSaveHelper.h"
+CSaveHelper::CSaveHelper()
+{
+}
+CSaveHelper::~CSaveHelper()
+{
+}
+int CSaveHelper::Save(CWnd* pWnd, CString filePath)
+{
+	CClientDC dc(pWnd);
+	CRect rect;
+	GetClientRect(pWnd->GetSafeHwnd(), &rect);//获取画布大小
+	HBITMAP hbitmap = CreateCompatibleBitmap(dc, rect.right - rect.left, rect.bottom - rect.top);//创建兼容位图
+	HDC hdc = CreateCompatibleDC(dc);      //创建兼容DC，以便将图像保存为不同的格式
+	HBITMAP hOldMap = (HBITMAP)SelectObject(hdc, hbitmap);//将位图选入DC，并保存返回值 
+	BitBlt(hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, dc, 0, 0, SRCCOPY);//将屏幕DC图像复制到内存DC
+	CImage image;
+	image.Attach(hbitmap);                //将位图转化为一般图像
+
+	HRESULT hResult = image.Save(filePath);     //保存图像
+	if (FAILED(hResult))
+	{
+		return -1;
+	}
+	else
+	{
+		return 1;
+	}
+	image.Detach();
+	SelectObject(hdc, hOldMap);
+	return 0;
+}
+```
+
+使用项目自带的保存函数即可将图像保存。该系统仅支持保存为 `bmp`格式。打开文件时从文件中加载图像，再将其绘制到工作区即可，仅支持打开 `bmp`文件。打开文件时设置 `m_Shape`成员为 `Shape::LImage`，为 **保存** 选项**添加事件处理程序**
+
+![](/picture/33.jpg)
+
+避免绘制出多余图案。源代码如下
+
+```c++
+//文件保存
+void CMy20204804View::OnFileSave()
+{
+	// TODO: 在此添加命令处理程序代码
+	CString filename, filter, strSave;
+	strSave = "bmp";
+	filename = "test.bmp";
+	filter = "bmp图片(*.bmp)|*.bmp||";
+	CFileDialog dlg(FALSE, strSave, filename, 6UL, filter);
+	CSaveHelper obj;
+	if (dlg.DoModal() == IDOK)
+	{
+		if (obj.Save(this, dlg.GetPathName()) > 0)
+		{
+			MessageBox((CString)"图片已保存");
+		}
+	}
+}
+```
+
+至此**保存文件**功能实现，接下来为**打开文件**功能**添加事件处理程序**，这里不再赘述，代码如下：
+
+```c++
+//打开文件
+void CMy20204804View::OnFileOpen()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Shape = Shape::LImage;
+	CString filter, strPath;
+	filter = "bmp图片(*.bmp)|*.bmp||";
+	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY, filter);
+	if (dlg.DoModal() == IDOK) {
+		strPath = dlg.GetPathName();
+	}
+	else {
+		return;
+	}
+
+	HBITMAP hBitmap = (HBITMAP)::LoadImage(NULL, strPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	CBitmap loadImageBitmap;
+	loadImageBitmap.Attach(hBitmap);
+
+	BITMAP bitmap;
+	loadImageBitmap.GetBitmap(&bitmap);
+
+	CBrush newBrush, *oldBrush;
+	CPen newPen, *oldPen;
+	newBrush.CreatePatternBrush(&loadImageBitmap);
+	newPen.CreatePen(PS_NULL, 1, RGB(0, 0, 0));
+	CClientDC dc(this);
+	oldBrush = (CBrush*)dc.SelectObject(&newBrush);
+	oldPen = dc.SelectObject(&newPen);
+	dc.Rectangle(0, 0, bitmap.bmWidth, bitmap.bmHeight);
+	dc.SelectObject(oldBrush);
+	dc.SelectObject(oldPen);
+}
+```
+
+至此打开文件功能实现，并且该程序所有功能都已实现，拜拜，再见，祝您生活愉快！
+
+### 待完善的地方
+
+- 鼠标在移动过程中图形会不停闪烁（需要使用双缓冲技术解决）。
+- 文本框会遮盖住原本的图形，且其中文字不能修改大小。
+- 清除选框时会使原本处在选框边界的线条消失。
+- 尚未添加画正多边形的功能。
+- 填充功能目前只支持填充白色背景。
+- 代码存在较多冗余。

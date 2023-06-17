@@ -5,6 +5,7 @@
 #pragma once
 #include <list>
 #define MAX_SAVE 10
+using namespace std;
 
 class CMy20204804View : public CView
 {
@@ -53,7 +54,7 @@ public:
 			Pencil, Fill, Text, Eraser, Choose, LImage//画笔，填充, 文本，橡皮，选择，加载图片
 	}m_Shape;
 
-	//list<HBITMAP> SaveSeries;//暂存图片列表
+	list<HBITMAP> SaveSeries;//暂存图片列表
 
 	int Textid = 100;
 	int savenum = 0;//撤回计数
@@ -81,6 +82,12 @@ public:
 	void ClearRect(CRect rect);
 	void FastRect(CRect rect, bool notxor);
 	afx_msg void OnFillColor();
+	afx_msg void OnSetPencil();
+	afx_msg void OnSetEraser();
+	afx_msg void OnChoose();
+	afx_msg void OnEditUndo();
+	afx_msg void OnFileSave();
+	afx_msg void OnFileOpen();
 };
 
 #ifndef _DEBUG  // 20204804View.cpp 中的调试版本

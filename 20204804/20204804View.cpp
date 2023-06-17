@@ -13,6 +13,8 @@
 #include "20204804Doc.h"
 #include "CSetPenSizeDialog.h"
 #include "20204804View.h"
+#include "CTempSave.h"
+#include "CSaveHelper.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -45,6 +47,12 @@ BEGIN_MESSAGE_MAP(CMy20204804View, CView)
 	ON_COMMAND(ID_32776, &CMy20204804View::OnDrawEllipse)
 	ON_COMMAND(ID_32779, &CMy20204804View::OnText)
 	ON_COMMAND(ID_32778, &CMy20204804View::OnFillColor)
+	ON_COMMAND(ID_32777, &CMy20204804View::OnSetPencil)
+	ON_COMMAND(ID_32780, &CMy20204804View::OnSetEraser)
+	ON_COMMAND(ID_32781, &CMy20204804View::OnChoose)
+	ON_COMMAND(ID_EDIT_UNDO, &CMy20204804View::OnEditUndo)
+	ON_COMMAND(ID_FILE_SAVE, &CMy20204804View::OnFileSave)
+	ON_COMMAND(ID_FILE_OPEN, &CMy20204804View::OnFileOpen)
 END_MESSAGE_MAP()
 
 // CMy20204804View 构造/析构
@@ -161,6 +169,7 @@ void CMy20204804View::OnSetColor()
 void CMy20204804View::OnDrawLine()
 {
 	// TODO: 在此添加命令处理程序代码
+
 	m_Shape = Shape::Line;
 }
 
@@ -168,6 +177,22 @@ void CMy20204804View::OnDrawLine()
 void CMy20204804View::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (m_Shape != Shape::Choose || !Chosen) {
+		if (savenum <= MAX_SAVE) {
+			savenum++;
+		}
+		TempSave(this, SaveSeries, savenum);
+	}
+	if (Chosen) {
+		CRect area(Chooselt, Choosebr);
+		if (!area.PtInRect(point))
+		{
+			/*要进行的操作*/
+			Chosen = false;
+			ClearRect(area);
+
+		}
+	}
 	BeginPoint = EndPoint = point;
 	Text_Pos = point;
 	if (m_Shape == Shape::Fill) {
@@ -183,6 +208,9 @@ void CMy20204804View::OnLButtonDown(UINT nFlags, CPoint point)
 void CMy20204804View::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	if (Chosen) {
+		BeginPoint = EndPoint = point;
+	}
 	CView::OnRButtonDown(nFlags, point);
 }
 
@@ -299,7 +327,7 @@ void CMy20204804View::OnLButtonUp(UINT nFlags, CPoint point)
 		case Shape::Choose: {
 			if (!Chosen) {
 				CRect rectP2(BeginPoint, point);
-				//ClearRect(rectP2);
+				ClearRect(rectP2);
 				CRect rect;
 				GetClientRect(&rect);
 				HBITMAP hbitmap = CreateCompatibleBitmap(dc, rect.right - rect.left, rect.bottom - rect.top);//创建兼容位图
@@ -316,7 +344,7 @@ void CMy20204804View::OnLButtonUp(UINT nFlags, CPoint point)
 				BitBlt(ac_hdc, 0, 0, rect.right - rect.left, rect.bottom - rect.top, dc, 0, 0, SRCCOPY);
 				StretchBlt(dc, BeginPoint.x, BeginPoint.y, rectP2.Width(), rectP2.Height(),
 					bc_hdc, BeginPoint.x, BeginPoint.y, rectP2.Width(), rectP2.Height(), SRCCOPY);
-				//FastRect(rectP2, false);
+				FastRect(rectP2, false);
 				EndPoint = point;
 				Chosen = true;
 				Chooselt = BeginPoint;
@@ -330,7 +358,7 @@ void CMy20204804View::OnLButtonUp(UINT nFlags, CPoint point)
 				Chooselt = Tempclt;
 				Choosebr = Tempcbr;
 				CRect rectP2(Chooselt, Choosebr);
-				//FastRect(rectP2, false);
+				FastRect(rectP2, false);
 			}
 			break;
 		}
@@ -345,7 +373,13 @@ void CMy20204804View::OnLButtonUp(UINT nFlags, CPoint point)
 void CMy20204804View::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-
+	CClientDC dc(this);
+	if (Chosen) {
+		Chooselt = Tempclt;
+		Choosebr = Tempcbr;
+		CRect rectP2(Chooselt, Choosebr);
+		FastRect(rectP2, false);
+	}
 	CView::OnRButtonUp(nFlags, point);
 }
 
@@ -524,7 +558,7 @@ void CMy20204804View::OnMouseMove(UINT nFlags, CPoint point)
 
 			break;
 		}
-		/*case Shape::Choose: {
+		case Shape::Choose: {
 			if (!Chosen) {
 				CRect rectP(BeginPoint, EndPoint);
 				FastRect(rectP, true);
@@ -550,7 +584,7 @@ void CMy20204804View::OnMouseMove(UINT nFlags, CPoint point)
 			}
 
 			break;
-		}*/
+		}
 		case Shape::Pencil: {
 			BeginPoint = EndPoint;//终点做新起点
 			EndPoint = point;
@@ -576,7 +610,7 @@ void CMy20204804View::OnMouseMove(UINT nFlags, CPoint point)
 		}
 		dc.SelectObject(oldPen);
 	}
-	/*if (nFlags & MK_RBUTTON) {
+	if (nFlags & MK_RBUTTON) {
 		CClientDC dc(this);
 		if (m_Shape == Shape::Choose && Chosen) {
 			CRect area(Tempclt, Tempcbr);
@@ -593,7 +627,7 @@ void CMy20204804View::OnMouseMove(UINT nFlags, CPoint point)
 				bc_hdc, Startlt.x, Startlt.y, Startbr.x - Startlt.x, Startbr.y - Startlt.y, SRCCOPY);
 			FastRect(newarea, true);
 		}
-	}*/
+	}
 	CView::OnMouseMove(nFlags, point);
 }
 
@@ -680,7 +714,7 @@ BOOL CMy20204804View::PreTranslateMessage(MSG* pMsg)
 			dc.TextOutW(Text_Pos.x, Text_Pos.y, pStr);
 			return TRUE;
 	}
-	/*if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_BACK) {//按下退格
+	if (pMsg->message == WM_KEYDOWN && pMsg->wParam == VK_BACK) {//按下退格
 		if (Chosen) {
 			CClientDC dc(this);
 			CRect rect;
@@ -690,7 +724,7 @@ BOOL CMy20204804View::PreTranslateMessage(MSG* pMsg)
 			Chosen = false;
 			return TRUE;
 		}
-	}*/
+	}
 	return CView::PreTranslateMessage(pMsg);
 }
 
@@ -722,9 +756,97 @@ void CMy20204804View::FastRect(CRect rect, bool notxor)
 	dc.Rectangle(rect);
 }
 
-
+//填充
 void CMy20204804View::OnFillColor()
 {
 	// TODO: 在此添加命令处理程序代码
 	m_Shape = Shape::Fill;
+}
+
+//铅笔
+void CMy20204804View::OnSetPencil()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Shape = Shape::Pencil;
+}
+
+//橡皮擦
+void CMy20204804View::OnSetEraser()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Shape = Shape::Eraser;
+}
+
+//选择
+void CMy20204804View::OnChoose()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Shape = Shape::Choose;
+}
+
+//撤回
+void CMy20204804View::OnEditUndo()
+{
+	// TODO: 在此添加命令处理程序代码
+	if (!SaveSeries.empty()) {
+		OpenTemp(this, SaveSeries);
+		savenum--;
+	}
+	else {
+		MessageBox((CString)"已经是第一步");
+	}
+}
+
+//文件保存
+void CMy20204804View::OnFileSave()
+{
+	// TODO: 在此添加命令处理程序代码
+	CString filename, filter, strSave;
+	strSave = "bmp";
+	filename = "test.bmp";
+	filter = "bmp图片(*.bmp)|*.bmp||";
+	CFileDialog dlg(FALSE, strSave, filename, 6UL, filter);
+	CSaveHelper obj;
+	if (dlg.DoModal() == IDOK)
+	{
+		if (obj.Save(this, dlg.GetPathName()) > 0)
+		{
+			MessageBox((CString)"图片已保存");
+		}
+	}
+
+}
+
+//打开文件
+void CMy20204804View::OnFileOpen()
+{
+	// TODO: 在此添加命令处理程序代码
+	m_Shape = Shape::LImage;
+	CString filter, strPath;
+	filter = "bmp图片(*.bmp)|*.bmp||";
+	CFileDialog dlg(TRUE, NULL, NULL, OFN_HIDEREADONLY, filter);
+	if (dlg.DoModal() == IDOK) {
+		strPath = dlg.GetPathName();
+	}
+	else {
+		return;
+	}
+
+	HBITMAP hBitmap = (HBITMAP)::LoadImage(NULL, strPath, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+	CBitmap loadImageBitmap;
+	loadImageBitmap.Attach(hBitmap);
+
+	BITMAP bitmap;
+	loadImageBitmap.GetBitmap(&bitmap);
+
+	CBrush newBrush, *oldBrush;
+	CPen newPen, *oldPen;
+	newBrush.CreatePatternBrush(&loadImageBitmap);
+	newPen.CreatePen(PS_NULL, 1, RGB(0, 0, 0));
+	CClientDC dc(this);
+	oldBrush = (CBrush*)dc.SelectObject(&newBrush);
+	oldPen = dc.SelectObject(&newPen);
+	dc.Rectangle(0, 0, bitmap.bmWidth, bitmap.bmHeight);
+	dc.SelectObject(oldBrush);
+	dc.SelectObject(oldPen);
 }

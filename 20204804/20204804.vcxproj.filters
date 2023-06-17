@@ -42,6 +42,12 @@
     <ClInclude Include="CSetPenSizeDialog.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CTempSave.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CSaveHelper.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="20204804.cpp">
@@ -60,6 +66,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="CSetPenSizeDialog.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CTempSave.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CSaveHelper.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

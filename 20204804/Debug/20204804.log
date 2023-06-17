@@ -1,10 +1,10 @@
 ﻿  20204804.cpp
   20204804View.cpp
-c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(239): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
-c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(240): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
-c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(430): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
-c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(431): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
-c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(441): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
-c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(442): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(267): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(268): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(464): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(465): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(475): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
+c:\users\administrator\desktop\mfc绘图程序\20204804\20204804\20204804view.cpp(476): warning C4244: “初始化”: 从“double”转换到“int”，可能丢失数据
   正在生成代码...
   20204804.vcxproj -> C:\Users\Administrator\Desktop\MFC绘图程序\20204804\Debug\20204804.exe

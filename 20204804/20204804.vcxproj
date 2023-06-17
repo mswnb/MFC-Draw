@@ -190,7 +190,9 @@
     <ClInclude Include="20204804.h" />
     <ClInclude Include="20204804Doc.h" />
     <ClInclude Include="20204804View.h" />
+    <ClInclude Include="CSaveHelper.h" />
     <ClInclude Include="CSetPenSizeDialog.h" />
+    <ClInclude Include="CTempSave.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="MainFrm.h" />
     <ClInclude Include="pch.h" />
@@ -201,7 +203,9 @@
     <ClCompile Include="20204804.cpp" />
     <ClCompile Include="20204804Doc.cpp" />
     <ClCompile Include="20204804View.cpp" />
+    <ClCompile Include="CSaveHelper.cpp" />
     <ClCompile Include="CSetPenSizeDialog.cpp" />
+    <ClCompile Include="CTempSave.cpp" />
     <ClCompile Include="MainFrm.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
