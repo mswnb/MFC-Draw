@@ -62,7 +62,7 @@ CMy20204804View::CMy20204804View() noexcept
 	// TODO: 在此处添加构造代码
 	Pen_Size = 1;//画笔粗细
 	Pen_Color = RGB(0, 0, 0);//画笔颜色
-	Brush_Color = RGB(0, 0, 0);//填充颜色
+	Brush_Color = RGB(255, 255, 0);//填充颜色
 	BeginPoint = CPoint(0, 0);//图形起始点
 	EndPoint = CPoint(0, 0);//图形终止点
 	m_Shape = Shape::Line;//默认画线段
@@ -199,7 +199,7 @@ void CMy20204804View::OnLButtonDown(UINT nFlags, CPoint point)
 		CClientDC Dc(this);
 		CBrush cBr(Brush_Color);
 		Dc.SelectObject(&cBr);
-		Dc.ExtFloodFill(BeginPoint.x, BeginPoint.y, RGB(255, 255, 255), FLOODFILLSURFACE);
+		//Dc.ExtFloodFill(BeginPoint.x, BeginPoint.y, RGB(255, 255, 255), FLOODFILLSURFACE);
 	}
 	CView::OnLButtonDown(nFlags, point);
 }

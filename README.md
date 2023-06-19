@@ -1246,6 +1246,17 @@ void CMy20204804View::OnEditUndo()
 using namespace std;
 ```
 
+接下来需要在鼠标左键按下时，记录用户绘制每个图形的步骤，需要在`OnLButtonDown`函数中添加如下代码：
+
+```c++
+if (m_Shape != Shape::Choose || !Chosen) {
+    if (savenum <= MAX_SAVE) {
+        savenum++;
+    }
+    TempSave(this, SaveSeries, savenum);
+}
+```
+
 当按下撤销快捷键时就调用该处理程序，取 `SaveSeries`中最后一个图像绘制到工作区，并将其弹出即可。这里规定最大撤回步数为 *10*。在 `C20204804View.cpp`中包含其头文件即可调用其中函数。此外，增加了一个限制条件，**在"选择区域"模式下不会暂存图像** ，至此撤回功能实现。
 
 #### 保存与打开文件
